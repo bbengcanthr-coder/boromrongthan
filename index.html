@@ -2,17 +2,17 @@
 <html lang="th">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <title>โรงทานช่างศิลปบรม</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f3f5ee;--ink:#1f2b24;--mute:#7c887f;--line:#dfe5d8;--acc:#f0a62b}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+:root{--bg:#ffffff;--ink:#1f2b24;--mute:#7c887f;--line:#dfe5d8;--acc:#f0a62b}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans Thai",system-ui,sans-serif;overflow:hidden;overscroll-behavior:none}
 #app{height:100dvh;max-width:480px;margin:0 auto;display:flex;flex-direction:column;padding:max(12px,env(safe-area-inset-top)) 14px max(12px,env(safe-area-inset-bottom))}
 h1{font-size:19px;font-weight:600;text-align:center;margin:2px 0 10px;letter-spacing:.2px}
-#stage{position:relative;width:100%;aspect-ratio:10/6.4;flex:none;touch-action:none;border-radius:22px;background:#fff;border:1px solid var(--line);overflow:hidden}
+#stage{position:relative;width:100%;aspect-ratio:10/6.4;flex:none;touch-action:none;background:#fff;overflow:hidden}
 #plate{position:absolute;left:2%;top:50%;width:96%;transform:translateY(-50%);pointer-events:none}
 .item{position:absolute;touch-action:none;cursor:grab}
 .item img{width:100%;display:block;pointer-events:none;-webkit-user-drag:none}
@@ -23,6 +23,7 @@ h1{font-size:19px;font-weight:600;text-align:center;margin:2px 0 10px;letter-spa
 #bar{height:46px;flex:none;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12.5px;color:var(--mute)}
 .ic{width:42px;height:34px;border-radius:12px;border:1px solid var(--line);background:#fff;font:400 18px inherit;color:var(--ink)}
 .ic:active{background:var(--acc)}
+.ic svg{display:block;margin:0 auto;pointer-events:none}
 #tray{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:7px}
 .cell{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0;padding:5px 3px 4px;border-radius:14px;background:#fff;border:1px solid var(--line);touch-action:none;cursor:grab}
 .cell img{flex:1;min-height:0;max-width:86%;object-fit:contain;pointer-events:none}
@@ -65,15 +66,16 @@ const LIST=[["rice","ข้าวสวย",.26],["friedrice","ข้าวผ�
 const $=s=>document.querySelector(s),stage=$('#stage'),R=()=>stage.getBoundingClientRect(),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let items=[],sel=null,z=1,blob=null;
 $('#plate').src=IMG.plate;
-document.addEventListener('gesturestart',e=>e.preventDefault());
+['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault()));
 
-function put(it){const e=it.el.style;e.left=it.x*100+'%';e.top=it.y*100+'%';e.width=it.w*100+'%';e.zIndex=it.z;e.transform='translate(-50%,-50%) rotate('+it.r+'deg)'}
+function put(it){const e=it.el.style;e.left=it.x*100+'%';e.top=it.y*100+'%';e.width=it.w*100+'%';e.zIndex=it.z;e.transform='translate(-50%,-50%) rotate('+it.r+'deg) scaleX('+it.f+')'}
 function pick(it){sel=it;items.forEach(i=>i.el.classList.toggle('sel',i===it));if(it){it.z=++z;put(it)}bar()}
-function bar(){$('#bar').innerHTML=sel?'<button class="ic" data-a="s-">−</button><button class="ic" data-a="s+">+</button><button class="ic" data-a="rot">↻</button><button class="ic" data-a="del">✕</button>':'ลากอาหารมาวางบนจาน หรือแตะเพื่อเพิ่ม'}
-$('#bar').onclick=e=>{const a=e.target.dataset.a;if(!a||!sel)return;
+function bar(){$('#bar').innerHTML=sel?'<button class="ic" data-a="s-">−</button><button class="ic" data-a="s+">+</button><button class="ic" data-a="rot" title="หมุน">↻</button><button class="ic" data-a="flip" title="พลิกซ้าย-ขวา"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M8 7L3 17h5z"/><path d="M16 7l5 10h-5z"/></svg></button><button class="ic" data-a="del">✕</button>':'ลากอาหารมาวางบนจาน หรือแตะเพื่อเพิ่ม'}
+$('#bar').onclick=e=>{const b=e.target.closest('button'),a=b&&b.dataset.a;if(!a||!sel)return;
   if(a==='s-')sel.w=Math.max(.08,sel.w*.88);
   if(a==='s+')sel.w=Math.min(.9,sel.w*1.14);
   if(a==='rot')sel.r+=20;
+  if(a==='flip')sel.f*=-1;
   if(a==='del'){sel.el.remove();items=items.filter(i=>i!==sel);pick(null);return}
   put(sel)};
 stage.onpointerdown=()=>pick(null);
@@ -81,7 +83,7 @@ stage.onpointerdown=()=>pick(null);
 function add(k,x,y){
   const d=LIST.find(a=>a[0]===k),e=document.createElement('div');
   e.className='item pop';e.innerHTML='<img src="'+IMG[k]+'" alt="">';
-  const it={k,x:clamp(x,.05,.95),y:clamp(y,.08,.92),w:d[2],r:0,z:++z,el:e};
+  const it={k,x:clamp(x,.05,.95),y:clamp(y,.08,.92),w:d[2],r:0,f:1,z:++z,el:e};
   e.onpointerdown=ev=>{ev.stopPropagation();pick(it);
     const r=R(),sx=ev.clientX,sy=ev.clientY,ox=it.x,oy=it.y;e.setPointerCapture(ev.pointerId);
     e.onpointermove=m=>{it.x=clamp(ox+(m.clientX-sx)/r.width,0,1);it.y=clamp(oy+(m.clientY-sy)/r.height,0,1);put(it)};
@@ -122,7 +124,7 @@ $('#save').onclick=async()=>{
   x.drawImage(p,(pr.left-r.left)*s,(pr.top-r.top)*s,pr.width*s,pr.height*s);
   for(const it of [...items].sort((a,b)=>a.z-b.z)){
     const i=await ld(it.k),w=it.w*W,h=w*i.height/i.width;
-    x.save();x.translate(it.x*W,it.y*r.height*s);x.rotate(it.r*Math.PI/180);x.drawImage(i,-w/2,-h/2,w,h);x.restore()}
+    x.save();x.translate(it.x*W,it.y*r.height*s);x.rotate(it.r*Math.PI/180);x.scale(it.f,1);x.drawImage(i,-w/2,-h/2,w,h);x.restore()}
   try{await document.fonts.load('600 44px "Noto Sans Thai"')}catch(e){}
   x.fillStyle='#1f2b24';x.textAlign='center';x.font='600 44px "Noto Sans Thai",sans-serif';
   x.fillText('โรงทานช่างศิลปบรม',W/2,H-50);
